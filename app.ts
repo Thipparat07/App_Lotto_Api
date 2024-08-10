@@ -1,5 +1,5 @@
 import express from "express";
-import { router as index } from "../Mini Project/api/index";
+import { router as index } from "./api/index";
 
 export const app = express();
 
