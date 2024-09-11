@@ -142,7 +142,7 @@ router.post("/payment", (req, res) => {
             });
 
             // ตรวจสอบยอดเงินในกระเป๋า
-            const checkBalanceQuery = "SELECT wallet_balance FROM Users WHERE user_id = ?";
+            const checkBalanceQuery = "SELECT wallet_balance FROM users WHERE user_id = ?";
             conn.query(checkBalanceQuery, [user_id], (err, result) => {
                 if (err) {
                     console.error(err);
@@ -155,7 +155,7 @@ router.post("/payment", (req, res) => {
                 }
 
                 // บันทึกข้อมูลการซื้อ
-                const insertPurchaseQuery = "INSERT INTO Purchases (user_id, lotto_id, purchase_count) VALUES ?";
+                const insertPurchaseQuery = "INSERT INTO purchases (user_id, lotto_id, purchase_count) VALUES ?";
                 conn.query(insertPurchaseQuery, [purchases], (err) => {
                     if (err) {
                         console.error(err);
@@ -171,7 +171,7 @@ router.post("/payment", (req, res) => {
                         }
 
                         // หักเงินจากกระเป๋า
-                        const updateBalanceQuery = "UPDATE Users SET wallet_balance = wallet_balance - ? WHERE user_id = ?";
+                        const updateBalanceQuery = "UPDATE users SET wallet_balance = wallet_balance - ? WHERE user_id = ?";
                         conn.query(updateBalanceQuery, [totalAmount, user_id], (err) => {
                             if (err) {
                                 console.error(err);
@@ -179,7 +179,7 @@ router.post("/payment", (req, res) => {
                             }
 
                             // บันทึกธุรกรรม
-                            const insertTransactionQuery = "INSERT INTO Transactions (user_id, amount, transaction_type) VALUES (?, ?, 'Purchase')";
+                            const insertTransactionQuery = "INSERT INTO transactions (user_id, amount, transaction_type) VALUES (?, ?, 'Purchase')";
                             conn.query(insertTransactionQuery, [user_id, totalAmount], (err) => {
                                 if (err) {
                                     console.error(err);
