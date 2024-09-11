@@ -10,13 +10,13 @@ router.post("/add", (req, res) => {
     const { user_id, lotto_id, quantity } = req.body;
 
     if (!user_id || !lotto_id || quantity == null) {
-        return res.status(400).json({ message: 'User ID, Lotto ID, and Quantity are required' });
+        return res.status(400).json({ message: 'User ID, lotto ID, and Quantity are required' });
     }
 
     // ตรวจสอบว่าหมายเลขลอตโต้มีอยู่ในฐานข้อมูล
-    const checkLottoQuery = "SELECT * FROM Lotto WHERE lotto_id = ?";
+    const checklottoQuery = "SELECT * FROM lotto WHERE lotto_id = ?";
 
-    conn.query(checkLottoQuery, [lotto_id], (err, result) => {
+    conn.query(checklottoQuery, [lotto_id], (err, result) => {
         if (err) {
             console.error(err);
             return res.status(500).json({ message: 'Internal Server Error' });
@@ -24,9 +24,9 @@ router.post("/add", (req, res) => {
 
         if (result.length > 0) {
             // ตรวจสอบว่าลอตโต้มีอยู่ในตะกร้าหรือไม่
-            const checkBasketQuery = "SELECT * FROM Basket WHERE user_id = ? AND lotto_id = ?";
+            const checkbasketQuery = "SELECT * FROM basket WHERE user_id = ? AND lotto_id = ?";
 
-            conn.query(checkBasketQuery, [user_id, lotto_id], (err, basketResult) => {
+            conn.query(checkbasketQuery, [user_id, lotto_id], (err, basketResult) => {
                 if (err) {
                     console.error(err);
                     return res.status(500).json({ message: 'Internal Server Error' });
@@ -34,9 +34,9 @@ router.post("/add", (req, res) => {
 
                 if (basketResult.length > 0) {
                     // อัปเดตจำนวนลอตโต้ในตะกร้า
-                    const updateBasketQuery = "UPDATE Basket SET quantity = ? WHERE user_id = ? AND lotto_id = ?";
+                    const updatebasketQuery = "UPDATE basket SET quantity = ? WHERE user_id = ? AND lotto_id = ?";
 
-                    conn.query(updateBasketQuery, [quantity, user_id, lotto_id], (err) => {
+                    conn.query(updatebasketQuery, [quantity, user_id, lotto_id], (err) => {
                         if (err) {
                             console.error(err);
                             return res.status(500).json({ message: 'Internal Server Error' });
@@ -44,14 +44,14 @@ router.post("/add", (req, res) => {
 
                         res.status(200).json({
                             success: true,
-                            message: 'Lotto quantity updated in basket successfully'
+                            message: 'lotto quantity updated in basket successfully'
                         });
                     });
                 } else {
                     // เพิ่มลอตโต้ลงในตะกร้า
-                    const insertBasketQuery = "INSERT INTO Basket (user_id, lotto_id, quantity) VALUES (?, ?, ?)";
+                    const insertbasketQuery = "INSERT INTO basket (user_id, lotto_id, quantity) VALUES (?, ?, ?)";
 
-                    conn.query(insertBasketQuery, [user_id, lotto_id, quantity], (err) => {
+                    conn.query(insertbasketQuery, [user_id, lotto_id, quantity], (err) => {
                         if (err) {
                             console.error(err);
                             return res.status(500).json({ message: 'Internal Server Error' });
@@ -59,13 +59,13 @@ router.post("/add", (req, res) => {
 
                         res.status(200).json({
                             success: true,
-                            message: 'Lotto added to basket successfully'
+                            message: 'lotto added to basket successfully'
                         });
                     });
                 }
             });
         } else {
-            res.status(404).json({ message: 'Lotto ID not found' });
+            res.status(404).json({ message: 'lotto ID not found' });
         }
     });
 });
@@ -82,8 +82,8 @@ router.get("/:user_id", (req, res) => {
 
     const sql = `
         SELECT b.basket_id, b.lotto_id, b.quantity, l.lotto_number, l.price
-        FROM Basket b
-        JOIN Lotto l ON b.lotto_id = l.lotto_id
+        FROM basket b
+        JOIN lotto l ON b.lotto_id = l.lotto_id
         WHERE b.user_id = ?
     `;
 
@@ -103,7 +103,7 @@ router.get("/:user_id", (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: 'Basket retrieved successfully',
+            message: 'basket retrieved successfully',
             data: basketItems,
             totalAmount: totalAmount.toFixed(2)  // จำนวนเงินรวมทั้งหมด
         });
@@ -121,8 +121,8 @@ router.post("/payment", (req, res) => {
     // ดึงรายการลอตโต้ทั้งหมดที่อยู่ในตะกร้าของผู้ใช้
     const basketQuery = `
         SELECT b.lotto_id, b.quantity, l.price
-        FROM Basket b
-        JOIN Lotto l ON b.lotto_id = l.lotto_id
+        FROM basket b
+        JOIN lotto l ON b.lotto_id = l.lotto_id
         WHERE b.user_id = ?
     `;
 
@@ -162,9 +162,9 @@ router.post("/payment", (req, res) => {
                         return res.status(500).json({ message: 'Internal Server Error' });
                     }
 
-                    // อัปเดตสถานะของ Lotto ว่าถูกซื้อแล้ว
-                    const updateLottoQuery = "UPDATE Lotto SET is_sold = TRUE WHERE lotto_id IN (?)";
-                    conn.query(updateLottoQuery, [basketItems.map((item: { lotto_id: any; }) => item.lotto_id)], (err) => {
+                    // อัปเดตสถานะของ lotto ว่าถูกซื้อแล้ว
+                    const updatelottoQuery = "UPDATE lotto SET is_sold = TRUE WHERE lotto_id IN (?)";
+                    conn.query(updatelottoQuery, [basketItems.map((item: { lotto_id: any; }) => item.lotto_id)], (err) => {
                         if (err) {
                             console.error(err);
                             return res.status(500).json({ message: 'Internal Server Error' });
@@ -187,8 +187,8 @@ router.post("/payment", (req, res) => {
                                 }
 
                                 // ลบรายการที่ซื้อจากตะกร้า
-                                const clearBasketQuery = "DELETE FROM Basket WHERE user_id = ?";
-                                conn.query(clearBasketQuery, [user_id], (err) => {
+                                const clearbasketQuery = "DELETE FROM basket WHERE user_id = ?";
+                                conn.query(clearbasketQuery, [user_id], (err) => {
                                     if (err) {
                                         console.error(err);
                                         return res.status(500).json({ message: 'Internal Server Error' });
@@ -206,7 +206,7 @@ router.post("/payment", (req, res) => {
                 });
             });
         } else {
-            res.status(404).json({ message: 'Basket is empty or User ID not found' });
+            res.status(404).json({ message: 'basket is empty or User ID not found' });
         }
     });
 });

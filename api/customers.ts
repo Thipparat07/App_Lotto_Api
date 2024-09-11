@@ -55,7 +55,7 @@ router.get("/:user_id", (req, res) => {
         } else {
             return res.status(404).json({
                 success: false,
-                message: 'Users Not Found'
+                message: 'users Not Found'
             });
         }
     });
@@ -70,7 +70,7 @@ router.post("/register", (req, res) => {
         return res.status(400).json({ message: 'Email and Password cannot be null' });
     }
 
-    const checkEmailSql = "SELECT COUNT(*) AS count FROM Users WHERE email = ?";
+    const checkEmailSql = "SELECT COUNT(*) AS count FROM users WHERE email = ?";
 
     conn.query(checkEmailSql, [email], (err, result) => {
         if (err) {
@@ -84,7 +84,7 @@ router.post("/register", (req, res) => {
         }
 
         //ถ้าไม่มี email ซ้ำให้เพิ่มข้อมูล
-        const insertSql = "INSERT INTO Users (fullname, phone_number, email, password, wallet_balance, is_member) VALUES (?, ?, ?, ?, 2000, true)";
+        const insertSql = "INSERT INTO users (fullname, phone_number, email, password, wallet_balance, is_member) VALUES (?, ?, ?, ?, 2000, true)";
 
         conn.query(insertSql, [fullname, phone, email, password], (err, result) => {
             if (err) {
@@ -111,7 +111,7 @@ router.post("/login", (req, res) => {
         return res.status(400).json({ message: 'Email and Password cannot be null' });
     }
 
-    const sql = "SELECT * FROM Users WHERE email = ? AND password = ?";
+    const sql = "SELECT * FROM users WHERE email = ? AND password = ?";
 
     conn.query(sql, [email, password], (err, result) => {
         if (err) {
@@ -178,7 +178,7 @@ router.put("/updateUser", (req, res) => {
     values.push(user_id);
 
     // สร้างคำสั่ง SQL โดยรวมเฉพาะฟิลด์ที่ต้องการอัปเดต
-    const sql = `UPDATE Users SET ${fieldsToUpdate.join(", ")} WHERE user_id = ?`;
+    const sql = `UPDATE users SET ${fieldsToUpdate.join(", ")} WHERE user_id = ?`;
 
     conn.query(sql, values, (err, result) => {
         if (err) {

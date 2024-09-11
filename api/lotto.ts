@@ -28,7 +28,7 @@ router.get("/setlotto", (req, res) => {
         const lottoPrice = 50.00; // ตัวอย่างราคาคงที่สำหรับทุกใบ
 
         // Prepare the SQL statement for inserting into the Lotto table
-        const insertQuery = "INSERT INTO Lotto (lotto_number, price) VALUES ?";
+        const insertQuery = "INSERT INTO lotto (lotto_number, price) VALUES ?";
         const values = uniqueSixDigitNumbers.map((number) => [number, lottoPrice]);
 
         // Insert the generated numbers and their prices into the database
