@@ -122,10 +122,12 @@ router.post("/login", (req, res) => {
         if (result.length > 0) {
             const user = result[0];
             const userID = user.user_id;  // ดึงค่า user_id จากฐานข้อมูล
+            const status = user.status;  // ดึงค่า status จากฐานข้อมูล
 
             return res.status(200).json({
                 message: 'Login Successfully',
-                userID: userID
+                userID: userID,
+                status: status
             });
         } else {
             return res.status(401).json({

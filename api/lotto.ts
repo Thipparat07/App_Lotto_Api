@@ -89,7 +89,7 @@ router.get("/", (req, res) => {
 });
 
 
-
+//ขึ้นเงินlottoที่ถูกรางวัล
 router.post("/cash-lotto", (req, res) => {
     const { user_id, lotto_id } = req.body;
 
