@@ -172,3 +172,48 @@ router.post("/cash-lotto", (req, res) => {
         }
     });
 });
+
+
+
+router.get("/random", (req, res) => {
+    let count = 3; // ค่าเริ่มต้น
+
+    if (req.query.count && typeof req.query.count === 'string') {
+        const parsedCount = parseInt(req.query.count, 10);
+        if (!isNaN(parsedCount) && parsedCount > 0) {
+            count = parsedCount;
+        }
+    }
+
+    const sql = `
+        SELECT * 
+        FROM lotto 
+        WHERE is_sold = 0 
+        ORDER BY RAND() 
+        LIMIT ?
+    `;
+
+    conn.query(sql, [count], (err, result) => {
+        if (err) {
+            console.error('Error executing query:', err);
+            res.status(500).json({
+                success: false,
+                message: 'Internal Server Error',
+                error: err.message
+            });
+        } else {
+            if (result.length > 0) {
+                res.status(200).json({
+                    success: true,
+                    message: 'Get Random Lotto Data Success',
+                    data: result
+                });
+            } else {
+                res.status(404).json({
+                    success: false,
+                    message: 'No Data Found'
+                });
+            }
+        }
+    });
+});
