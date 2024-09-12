@@ -84,7 +84,7 @@ router.post("/register", (req, res) => {
         }
 
         //ถ้าไม่มี email ซ้ำให้เพิ่มข้อมูล
-        const insertSql = "INSERT INTO users (fullname, phone_number, email, password, wallet_balance, is_member) VALUES (?, ?, ?, ?, 2000, true)";
+        const insertSql = "INSERT INTO users (fullname, phone_number, email, password, wallet_balance, status) VALUES (?, ?, ?, ?, 2000, true)";
 
         conn.query(insertSql, [fullname, phone, email, password], (err, result) => {
             if (err) {
@@ -122,12 +122,10 @@ router.post("/login", (req, res) => {
         if (result.length > 0) {
             const user = result[0];
             const userID = user.user_id;  // ดึงค่า user_id จากฐานข้อมูล
-            const status = user.status;  // ดึงค่า status จากฐานข้อมูล
 
             return res.status(200).json({
                 message: 'Login Successfully',
-                userID: userID,
-                status: status
+                userID: userID
             });
         } else {
             return res.status(401).json({
