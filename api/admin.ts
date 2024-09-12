@@ -6,7 +6,7 @@ export const router = express.Router();
 
 // เก็บหมายเลขที่ถูกสุ่มได้
 let drawnNumbers: { lotto_id: any; lotto_number: any; }[] = [];
-// ยังไม่เสร็จ***************************************************************************************************
+
 // ฟังก์ชันสำหรับการสุ่มหมายเลขลอตโต้ทีละหนึ่ง
 router.post("/draw-one", (req, res) => {
     // ตรวจสอบว่ามีหมายเลขถูกสุ่มแล้วครบ 5 หมายเลขหรือยัง
@@ -16,16 +16,11 @@ router.post("/draw-one", (req, res) => {
         });
     }
 
-    // รับวันที่ที่ต้องการจากผู้ใช้หรือใช้วันที่ปัจจุบัน
-    const drawDate = req.body.drawDate || new Date().toISOString().slice(0, 10);
-
-    // SQL สำหรับการสุ่มหมายเลขลอตเตอรี่เฉพาะวันที่กำหนด และยังไม่ได้เคลมรางวัล
+    // SQL สำหรับการสุ่มหมายเลขจากลอตเตอรี่ที่ขายไปแล้ว และหมายเลขนั้นยังไม่เคยถูกสุ่มมาก่อน
     const sql = `
         SELECT l.lotto_id, l.lotto_number 
         FROM lotto l
-        WHERE l.is_claimed != 1
-        AND l.lotto_id NOT IN (?) 
-        AND DATE(l.date) = ?
+        WHERE l.is_sold = 1 AND l.lotto_id NOT IN (?) 
         ORDER BY RAND() 
         LIMIT 1
     `;
@@ -34,7 +29,7 @@ router.post("/draw-one", (req, res) => {
     const excludedIds = drawnNumbers.length > 0 ? drawnNumbers.map(num => num.lotto_id) : [-1];
 
     // รัน SQL Query เพื่อสุ่มลอตเตอรี่ที่ขายไปแล้ว
-    conn.query(sql, [excludedIds, drawDate], (err, result) => {
+    conn.query(sql, [excludedIds], (err, result) => {
         if (err) {
             console.error("Database error:", err);
             return res.status(500).json({
@@ -61,7 +56,7 @@ router.post("/draw-one", (req, res) => {
         } else {
             // ไม่มีหมายเลขลอตโต้ที่สามารถสุ่มได้แล้ว
             return res.status(400).json({
-                message: 'No available lotto tickets to draw for this date'
+                message: 'No available lotto tickets to draw'
             });
         }
     });
