@@ -136,6 +136,31 @@ router.post("/save-drawn-numbers", (req, res) => {
 });
 
 
+router.get("/memberlist", (req, res) => {
+    const sql = "SELECT * FROM users WHERE status = 1";
+    conn.query(sql, (err, result) => {
+        if (err) {
+            console.error(err);
+            res.status(500).json({
+                message: 'Internal Server Error'
+            });
+        } else {
+            if (result.length > 0) {
+                res.status(200).json({
+                    success: true,
+                    message: 'Get Data Success',
+                    data: result
+                });
+            } else {
+                res.status(204).json({
+                    message: 'No active users found'
+                });
+            }
+        }
+    });
+});
+
+
 
 
 

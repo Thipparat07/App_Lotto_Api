@@ -63,7 +63,7 @@ router.get("/:user_id", (req, res) => {
 
 //สมัครสมาชิก
 router.post("/register", (req, res) => {
-    const { password, fullname, phone, email } = req.body;
+    const { password, fullname, phone_number, email } = req.body;
 
     // email และ password ต้องไม่เป็นค่าว่าง
     if (!email || !password) {
@@ -86,7 +86,7 @@ router.post("/register", (req, res) => {
         //ถ้าไม่มี email ซ้ำให้เพิ่มข้อมูล
         const insertSql = "INSERT INTO users (fullname, phone_number, email, password, wallet_balance, status) VALUES (?, ?, ?, ?, 2000, true)";
 
-        conn.query(insertSql, [fullname, phone, email, password], (err, result) => {
+        conn.query(insertSql, [fullname, phone_number, email, password], (err, result) => {
             if (err) {
                 console.error("Error during insertion:", err.message);
                 return res.status(500).send('Error during insertion.');
