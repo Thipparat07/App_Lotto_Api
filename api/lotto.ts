@@ -175,45 +175,19 @@ router.post("/cash-lotto", (req, res) => {
 
 
 
-router.get("/random", (req, res) => {
-    let count = 3; // ค่าเริ่มต้น
+router.get("/search", (req, res) => {
+    const { number, type = 'full' } = req.query;
+    if (typeof number !== 'string') return res.status(400).json({ success: false, message: 'Valid number required' });
 
-    if (req.query.count && typeof req.query.count === 'string') {
-        const parsedCount = parseInt(req.query.count, 10);
-        if (!isNaN(parsedCount) && parsedCount > 0) {
-            count = parsedCount;
-        }
-    }
+    const pattern = type === 'front' ? `${number.slice(0, 3)}%` : 
+                    type === 'back' ? `%${number.slice(-3)}` : 
+                    `%${number}%`;
 
-    const sql = `
-        SELECT * 
-        FROM lotto 
-        WHERE is_sold = 0 
-        ORDER BY RAND() 
-        LIMIT ?
-    `;
-
-    conn.query(sql, [count], (err, result) => {
-        if (err) {
-            console.error('Error executing query:', err);
-            res.status(500).json({
-                success: false,
-                message: 'Internal Server Error',
-                error: err.message
-            });
-        } else {
-            if (result.length > 0) {
-                res.status(200).json({
-                    success: true,
-                    message: 'Get Random Lotto Data Success',
-                    data: result
-                });
-            } else {
-                res.status(404).json({
-                    success: false,
-                    message: 'No Data Found'
-                });
-            }
-        }
-    });
+    conn.query(
+        "SELECT * FROM lotto WHERE lotto_number LIKE ? AND is_sold = 0 ORDER BY lotto_number LIMIT 50",
+        [pattern],
+        (err, results) => err ? 
+            res.status(500).json({ success: false, message: 'Server error' }) :
+            res.json({ success: true, total: results.length, data: results })
+    );
 });
