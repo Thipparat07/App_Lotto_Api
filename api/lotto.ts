@@ -264,3 +264,60 @@ router.get("/random", (req, res) => {
         }
     });
 });
+
+interface LottoResult {
+    winner_level: number;
+    lotto_number: string;
+    prize_amount: number;
+}
+
+// เพิ่มเส้น API ใหม่สำหรับดึงผลรางวัลลอตเตอรี่
+interface LottoResult {
+    winner_level: number;
+    lotto_number: string;
+    prize_amount: number;
+}
+
+// เพิ่มเส้น API ใหม่สำหรับดึงผลรางวัลลอตเตอรี่
+router.get("/results", (req, res) => {
+    const sql = `
+        SELECT lr.winner_level, l.lotto_number, p.prize_amount
+        FROM lottoresults lr
+        JOIN lotto l ON lr.lotto_id = l.lotto_id
+        JOIN prizes p ON lr.winner_level = p.winner_level
+        ORDER BY lr.winner_level ASC
+    `;
+
+    conn.query(sql, (err: mysql.MysqlError | null, result: LottoResult[]) => {
+        if (err) {
+            console.error('Error executing query:', err);
+            res.status(500).json({
+                success: false,
+                message: 'Internal Server Error',
+                error: err.message
+            });
+        } else {
+            if (result.length > 0) {
+                // จัดรูปแบบข้อมูลให้เหมาะสมกับการใช้งานในแอพ
+                const formattedResults = {
+                    first: result.find((r: LottoResult) => r.winner_level === 1)?.lotto_number || 'XXXXXX',
+                    second: result.find((r: LottoResult) => r.winner_level === 2)?.lotto_number || 'XXXXXX',
+                    third: result.find((r: LottoResult) => r.winner_level === 3)?.lotto_number || 'XXXXXX',
+                    fourth: result.find((r: LottoResult) => r.winner_level === 4)?.lotto_number || 'XXXXXX',
+                    fifth: result.find((r: LottoResult) => r.winner_level === 5)?.lotto_number || 'XXXXXX'
+                };
+
+                res.status(200).json({
+                    success: true,
+                    message: 'Get Lotto Results Success',
+                    data: formattedResults
+                });
+            } else {
+                res.status(404).json({
+                    success: false,
+                    message: 'No Lotto Results Found'
+                });
+            }
+        }
+    });
+});
