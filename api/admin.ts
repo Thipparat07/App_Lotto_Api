@@ -234,3 +234,39 @@ router.get("/user/:userId", (req, res) => {
         }
     });
 });
+
+router.post("/reset-system", (req, res) => {
+    const deleteStatements = [
+        "DELETE FROM lotto_transactions",
+        "DELETE FROM lotto_purchases",
+        "DELETE FROM lotto_basket",
+        "DELETE FROM lotto_lottoresults",
+        "DELETE FROM lotto_lotto",
+        "DELETE FROM users WHERE status = 1"
+    ];
+
+    let affectedRows = 0;
+
+    deleteStatements.forEach(query => {
+        conn.query(query, (err, result) => {
+            if (err) {
+                console.error(`Error executing query: ${query}`, err);
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+                return;
+            }
+
+            affectedRows += result.affectedRows;
+
+            console.log(`Deleted ${result.affectedRows} rows from table: ${query}`);
+        });
+    });
+
+    res.status(200).json({
+        success: true,
+        message: `System reset successfully. Deleted ${affectedRows} rows total.`,
+        deletedCount: affectedRows
+    });
+});
