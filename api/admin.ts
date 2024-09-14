@@ -9,14 +9,13 @@ let drawnNumbers: { lotto_id: any; lotto_number: any; }[] = [];
 
 // ฟังก์ชันสำหรับการสุ่มหมายเลขลอตโต้ทีละหนึ่ง
 router.post("/draw-one", (req, res) => {
-    // ตรวจสอบว่ามีหมายเลขถูกสุ่มแล้วครบ 5 หมายเลขหรือยัง
     if (drawnNumbers.length >= 5) {
         return res.status(400).json({
+            success: false,
             message: 'Already drawn 5 numbers. Please save or reset.'
         });
     }
 
-    // SQL สำหรับการสุ่มหมายเลขจากลอตเตอรี่ที่ขายไปแล้ว และหมายเลขนั้นยังไม่เคยถูกสุ่มมาก่อน
     const sql = `
         SELECT l.lotto_id, l.lotto_number 
         FROM lotto l
@@ -25,26 +24,23 @@ router.post("/draw-one", (req, res) => {
         LIMIT 1
     `;
 
-    // ตรวจสอบว่ามีหมายเลขที่สุ่มได้แล้วหรือไม่ ถ้ามีจะเอาไปใส่ใน array ถ้าไม่มีกำหนดค่าเป็น -1 เพื่อไม่ให้เกิด error
     const excludedIds = drawnNumbers.length > 0 ? drawnNumbers.map(num => num.lotto_id) : [-1];
 
-    // รัน SQL Query เพื่อสุ่มลอตเตอรี่ที่ขายไปแล้ว
     conn.query(sql, [excludedIds], (err, result) => {
         if (err) {
             console.error("Database error:", err);
             return res.status(500).json({
+                success: false,
                 message: 'Internal Server Error'
             });
         }
 
-        // ตรวจสอบว่ามีหมายเลขที่ถูกสุ่มได้หรือไม่
         if (result.length === 1) {
             const drawnLotto = {
                 lotto_id: result[0].lotto_id,
                 lotto_number: result[0].lotto_number
             };
 
-            // เพิ่มหมายเลขที่สุ่มได้เข้าไปใน array drawnNumbers
             drawnNumbers.push(drawnLotto);
 
             return res.status(200).json({
@@ -54,11 +50,19 @@ router.post("/draw-one", (req, res) => {
                 drawnCount: drawnNumbers.length
             });
         } else {
-            // ไม่มีหมายเลขลอตโต้ที่สามารถสุ่มได้แล้ว
             return res.status(400).json({
+                success: false,
                 message: 'No available lotto tickets to draw'
             });
         }
+    });
+});
+
+router.post("/reset-drawn", (req, res) => {
+    drawnNumbers = [];
+    res.status(200).json({
+        success: true,
+        message: 'Drawn numbers reset successfully'
     });
 });
 
@@ -136,6 +140,20 @@ router.post("/save-drawn-numbers", (req, res) => {
 });
 
 
+
+
+
+// ฟังก์ชันสำหรับการ reset ระบบการจับรางวัล
+router.post("/reset", (req, res) => {
+    // ล้างค่า drawnNumbers เพื่อให้เริ่มสุ่มใหม่ได้
+    drawnNumbers = [];
+    res.status(200).json({
+        success: true,
+        message: 'Lotto system has been reset.'
+    });
+});
+
+
 router.get("/memberlist", (req, res) => {
     const sql = "SELECT * FROM users WHERE status = 1";
     conn.query(sql, (err, result) => {
@@ -160,16 +178,126 @@ router.get("/memberlist", (req, res) => {
     });
 });
 
-
-
-
-
-// ฟังก์ชันสำหรับการ reset ระบบการจับรางวัล
-router.post("/reset", (req, res) => {
-    // ล้างค่า drawnNumbers เพื่อให้เริ่มสุ่มใหม่ได้
-    drawnNumbers = [];
-    res.status(200).json({
-        success: true,
-        message: 'Lotto system has been reset.'
+router.delete("/delete-member", (req, res) => {
+    const sql = "DELETE FROM users WHERE status = 1";
+    conn.query(sql, (err, result) => {
+        if (err) {
+            console.error(err);
+            res.status(500).json({
+                success: false,
+                message: 'Internal Server Error'
+            });
+        } else {
+            if (result.affectedRows > 0) {
+                res.status(200).json({
+                    success: true,
+                    message: 'Successfully deleted all active users',
+                    deletedCount: result.affectedRows
+                });
+            } else {
+                res.status(200).json({
+                    success: true,
+                    message: 'No active users found to delete',
+                    deletedCount: 0
+                });
+            }
+        }
     });
 });
+
+router.get("/user/:userId", (req, res) => {
+    const userId = req.params.userId;
+    const sql = "SELECT user_id, username, fullname, email, phone_number, status, wallet_balance FROM users WHERE user_id = ?";
+    
+    conn.query(sql, [userId], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({
+                success: false,
+                message: 'Internal Server Error'
+            });
+        }
+        
+        if (result.length > 0) {
+            const user = result[0];
+            // ไม่ส่งคืนข้อมูล password เพื่อความปลอดภัย
+            res.status(200).json({
+                success: true,
+                message: 'User data retrieved successfully',
+                data: user
+            });
+        } else {
+            res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+    });
+});
+
+
+router.delete("/delete-active-users", (req, res) => {
+    const sql = "DELETE FROM users WHERE status = 1";
+    conn.query(sql, (err, result) => {
+        if (err) {
+            console.error(err);
+            res.status(500).json({
+                success: false,
+                message: 'Internal Server Error'
+            });
+        } else {
+            if (result.affectedRows > 0) {
+                res.status(200).json({
+                    success: true,
+                    message: 'Successfully deleted all active users',
+                    deletedCount: result.affectedRows
+                });
+            } else {
+                res.status(200).json({
+                    success: true,
+                    message: 'No active users found to delete',
+                    deletedCount: 0
+                });
+            }
+        }
+    });
+});
+
+
+
+// เพิ่ม endpoint นี้ในไฟล์ API ของคุณ
+// router.get("/latest-results", (req, res) => {
+//     const sql = `
+//         SELECT lr.winner_level, lr.draw_date, l.lotto_number, p.prize_amount
+//         FROM lottoresults lr
+//         JOIN lotto l ON lr.lotto_id = l.lotto_id
+//         JOIN prize p ON lr.winner_level = p.winner_level
+//         WHERE lr.draw_date = (SELECT MAX(draw_date) FROM lottoresults)
+//         ORDER BY lr.winner_level ASC
+//     `;
+
+//     conn.query(sql, (err, result) => {
+//         if (err) {
+//             console.error("Database error:", err);
+//             return res.status(500).json({
+//                 success: false,
+//                 message: 'Internal Server Error'
+//             });
+//         }
+
+//         if (result.length > 0) {
+//             const drawDate = result[0].draw_date;
+            
+//             return res.status(200).json({
+//                 success: true,
+//                 draw_date: drawDate,
+//                 results: result
+//             });
+//         } else {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: 'No results found'
+//             });
+//         }
+//     });
+// });
